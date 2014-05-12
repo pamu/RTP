@@ -15,6 +15,7 @@ class Receiver extends Actor {
    */
   import context.system
   /**
+   * Register with IO manager to get network events
    * IO manager takes Udp as argument
    * port 0 means operating system allocates available free port to bind
    */
@@ -44,7 +45,6 @@ class Receiver extends Actor {
        */
       case Udp.Received(data, remote) => {
         println("received data: "+data.decodeString("UTF-8"))
-        //socket ! Udp.Send(data, remote)
       }
       /**
        * Send the sender of the datagrams the unbind message
