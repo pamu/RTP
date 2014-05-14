@@ -16,6 +16,7 @@ case object Kill
  * SimpleSender actor sends udp datagrams to the receiver
  */
 class SimpleSender(remote: InetSocketAddress) extends Actor {
+  var counter: Int = 0
   /**
    * import IO manager into scope
    */
@@ -40,11 +41,39 @@ class SimpleSender(remote: InetSocketAddress) extends Actor {
     /**
      * send the message to remote
      */
-    case msg: String =>
-      send ! Udp.Send(ByteString(msg), remote)
+    case msg: String => {
+     checkCounter
+     val frame = getFrame(counter.asInstanceOf[Short], msg)
+     counter = counter + 1
+     send ! Udp.Send(frame, remote)
+    }
     /**
      * Actor do not know went to stop so, send it a Poison Pill to stop
      */
     case Kill => self ! PoisonPill
+  }
+  
+  /**
+   * 
+   */
+  def checkCounter = {
+    if(counter >= Short.MaxValue) counter = 0
+  }
+  
+  /**
+   * 
+   */
+  def getFrame(counter: Short, msg: String) = {
+    implicit val byteOrder = java.nio.ByteOrder.BIG_ENDIAN
+    val frameBuilder = ByteString.newBuilder
+    frameBuilder.putShort(counter)
+    if(msg.length < 508){
+    	frameBuilder.putShort(msg.length())
+    }else{
+    	frameBuilder.putShort(508)
+    }
+    frameBuilder.putBytes(msg.take(508).getBytes())
+    println(frameBuilder.length)
+    frameBuilder.result
   }
 }
