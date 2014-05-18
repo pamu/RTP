@@ -19,24 +19,7 @@ object Main extends App {
    */
   val udpSystem = ActorSystem("UdpSystem")
  
-  /**
-   * create the receiver actor
-   */
-  val receiver = udpSystem.actorOf(Props[Receiver], "ReceiverActor")
-  
-  /**
-   * create the sender actor
-   */
-  val sender = udpSystem.actorOf(Props(new SimpleSender(new InetSocketAddress("127.0.0.1", 9999))))
-  
-  /**
-   * 
-   */
-  while(true) {
-    Thread.sleep(1000)
-    sender ! "non-blocking io rocks"
-  }
-  
+
   /**
    * wait don't quit the main thread
    */
