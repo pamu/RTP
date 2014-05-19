@@ -16,9 +16,10 @@ case object StartTimer
 case object CancelTimer
 case object Timeout
 case object Retry
-case class SendWindow(startSNum: Int)
+case class NextWindow(startSNum: Int)
 class Sender(remote: InetSocketAddress) extends Actor {
   import context.system
+  var lastSNum = 0
   var currentSNum = 0
   var counter = 0
   var tries = 0
@@ -34,20 +35,22 @@ class Sender(remote: InetSocketAddress) extends Actor {
   def ready(send: ActorRef): Receive = {
     case Start => {
       snum = Utils.chooseSNum
-      self ! SendWindow(snum)
+      self ! NextWindow(snum)
     }
-    case SendWindow(start) => {
+    case NextWindow(start) => {
       val windowSize = Params.window
       if(counter == Params.packetsToSend){
         println(s"${Params.packetsToSend} packets sent")
         self ! Kill
       }
+      lastSNum = currentSNum 
       for(i <- 0 until windowSize){
         currentSNum = start + i 
         val frame = Utils.encodeFrame((currentSNum).asInstanceOf[Short], "This message is from Sender and you have received it correctly")
         self ! frame
         counter = counter + 1
       }
+      
       self ! StartTimer
     }
     case msg: ByteString => send ! Udp.Send(msg, remote)
@@ -61,7 +64,7 @@ class Sender(remote: InetSocketAddress) extends Actor {
         timer.cancel
       }
       println("transmitted "+counter+" packets")
-      self ! SendWindow(currentSNum)
+      
     }
     case Retry => {
       tries = tries + 1
@@ -71,6 +74,15 @@ class Sender(remote: InetSocketAddress) extends Actor {
     case Kill =>  {
       self ! PoisonPill
       context.stop(self)
+    }
+    case WindowStart(loss) => {
+      
+      if(loss > Params.loss){
+        self ! NextWindow(lastSNum)
+      }else{
+        self ! NextWindow(currentSNum)
+      }
+      
     }
   }
 }

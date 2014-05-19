@@ -53,7 +53,7 @@ object Utils {
     for(i <- 1 to Params.window) {
       bitmap += in.getByte
     }
-    (snum, md5, bitmap)
+    (snum, md5, bitmap.result)
   }
  
   /**
