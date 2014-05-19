@@ -8,5 +8,7 @@ object Params {
   var window = 20
   var loss = 5
   var dataSenderTimeOut = 50 milliseconds
-  var senderRetryTransmissions = 8
+  var senderRetryTransmissions = 1
+  var senderLog = "sender.log"
+  var receiverLog = "receiver.log"
 }

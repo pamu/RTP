@@ -9,6 +9,7 @@ import akka.util.ByteString
 import akka.actor.PoisonPill
 
 case object Kill
+case class Ack(frame: ByteString)
 class Sender(remote: InetSocketAddress) extends Actor {
   import context.system
   
@@ -19,7 +20,8 @@ class Sender(remote: InetSocketAddress) extends Actor {
   }
   
   def ready(send: ActorRef): Receive = {
-    case msg: String => send ! Udp.Send(ByteString.fromString(msg), remote)
+    case msg: ByteString => send ! Udp.Send(msg, remote)
+    case Ack(frame) => {println("ack received");self ! frame}
     case Kill =>  self ! PoisonPill
   }
 }

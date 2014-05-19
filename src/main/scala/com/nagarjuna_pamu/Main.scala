@@ -5,6 +5,7 @@ import akka.actor.Props
 import java.net.InetSocketAddress
 import akka.io.UdpConnected
 import akka.util.ByteString
+import com.nagarjuna_pamu.data_sender._
 
 /**
  * App stands for Application which provides main method and is the application entry of the project
@@ -17,11 +18,15 @@ object Main extends App {
   /**
    * get the reference to actor system
    */
-  val udpSystem = ActorSystem("UdpSystem")
- 
-
-  /**
-   * wait don't quit the main thread
-   */
-  Thread.sleep(Long.MaxValue) 
+  val system = ActorSystem("UdpSystem")
+  val receiverSideSender = system.actorOf(Props(new com.nagarjuna_pamu.data_receiver.Sender(new InetSocketAddress("127.0.0.1", Params.dataSenderSideBindingPort))), "ReceiverSideSender")
+  val receiverSideReceiver = system.actorOf(Props(new com.nagarjuna_pamu.data_receiver.Receiver(receiverSideSender)))
+  val senderSideSender = system.actorOf(Props(new com.nagarjuna_pamu.data_sender.Sender(new InetSocketAddress("127.0.0.1", Params.dataReceiverSideBindingPort))), "SenderSideSender")
+  val senderSiderReceiver = system.actorOf(Props(new com.nagarjuna_pamu.data_sender.Receiver(senderSideSender)))
+  
+  Thread.sleep(2000)
+  
+  senderSideSender ! Start
+  
+  Thread.sleep(Long.MaxValue)
 }

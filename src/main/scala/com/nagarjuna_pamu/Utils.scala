@@ -4,11 +4,8 @@ import akka.util.ByteString
 import java.security.MessageDigest
 
 object Utils {
- 
- def decode(frame: ByteString) = {
-  /**
-   * 
-   */
+ def chooseSNum = scala.util.Random.nextInt(Short.MaxValue/2)
+ def decodeFrame(frame: ByteString) = {
   implicit val byteOrder = java.nio.ByteOrder.BIG_ENDIAN
    val in = frame.iterator
    val short = in.getShort
@@ -21,11 +18,8 @@ object Utils {
   
    (short, a.result)
  }
-  
- /**
-  * 
-  */
- def getFrame(counter: Short, msg: String) = {
+
+ def encodeFrame(counter: Short, msg: String) = {
     implicit val byteOrder = java.nio.ByteOrder.BIG_ENDIAN
     val frameBuilder = ByteString.newBuilder
     frameBuilder.putShort(counter)
@@ -35,8 +29,31 @@ object Utils {
     	frameBuilder.putShort(508)
     }
     frameBuilder.putBytes(msg.take(508).getBytes())
-    println(frameBuilder.length)
     frameBuilder.result
+  }
+ 
+  def encodeAck(snum: Short, msg: String, bitmap: Array[Byte]): ByteString = {
+    implicit val byteOrder = java.nio.ByteOrder.BIG_ENDIAN
+    val frameBuilder = ByteString.newBuilder
+    frameBuilder.putShort(snum)
+    frameBuilder.putBytes(md5(msg))
+    frameBuilder.putBytes(bitmap)
+    frameBuilder.result
+  }
+  
+  def decodeAck(ack: ByteString) = {
+    implicit val byteOrder = java.nio.ByteOrder.BIG_ENDIAN
+    val in = ack.iterator
+    val snum = in.getShort
+    val md5 = Array.newBuilder[Byte]
+    for(i <- 1 to 16) {
+      md5 += in.getByte
+    }
+    val bitmap = Array.newBuilder[Byte]
+    for(i <- 1 to Params.window) {
+      bitmap += in.getByte
+    }
+    (snum, md5, bitmap)
   }
  
   /**
