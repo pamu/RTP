@@ -20,7 +20,7 @@ class Receiver(senderSideSender: ActorRef) extends Actor {
   
   def ready(socket: ActorRef): Receive = {
     case Udp.Received(frame, remote) => {
-      println("got a ack")
+      println("got a ack and its time to send next window")
       val tuple = Utils.decodeAck(frame)
       println("first snum: "+tuple._1)
       senderSideSender ! CancelTimer

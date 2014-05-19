@@ -12,6 +12,7 @@ class Receiver(receiverSideSender: ActorRef) extends Actor {
   var startSNum = -1
   var msg: String = null
   var count = 0
+  var flag: Boolean = false
   val bitmap = Array.fill[Byte](Params.window)(0)
   import context.system
   
@@ -30,19 +31,19 @@ class Receiver(receiverSideSender: ActorRef) extends Actor {
         println("got first msg containing: "+msg)
       }
       val diff = tuple._1 - startSNum
-      if( diff == count) {
-        bitmap(count) = 1
-      }else {
-        for(i <- count to diff) {
+      bitmap(diff) = 1
+      count = count + 1
+      println(tuple._1+" received")
+      for(i <- bitmap)
+      print(s"$i ")
+      println
+      if(diff == Params.window - 1){
+        receiverSideSender ! Utils.encodeAck(startSNum.asInstanceOf[Short],new String(Utils.md5(msg)), bitmap)
+        for(i <- 0 until bitmap.size){
           bitmap(i) = 0
         }
-      }
-      count = count + 1
-      if(tuple._1 - startSNum >= Params.window) {
         count = 0
-        println("sent ack")
-        receiverSideSender ! Ack(Utils.encodeAck(startSNum.asInstanceOf[Short], msg, bitmap))
-      }
+      } 
     }
     case Udp.Unbind => socket ! Udp.Unbind
     case Udp.Unbound => context.stop(self)
