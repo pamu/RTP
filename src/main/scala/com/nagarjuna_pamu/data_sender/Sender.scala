@@ -35,6 +35,7 @@ class Sender(remote: InetSocketAddress) extends Actor {
   def ready(send: ActorRef): Receive = {
     case Start => {
       snum = Utils.chooseSNum
+      currentSNum = snum
       self ! NextWindow(snum)
     }
     case NextWindow(start) => {
@@ -75,14 +76,16 @@ class Sender(remote: InetSocketAddress) extends Actor {
       self ! PoisonPill
       context.stop(self)
     }
-    case WindowStart(loss) => {
-      
-      if(loss > Params.loss){
-        self ! NextWindow(lastSNum)
-      }else{
-        self ! NextWindow(currentSNum)
-      }
-      
+    
+    case Ack(ack) => {
+    	val tuple = Utils.decodeAck(ack)
+    	
+    	if(tuple._1 == lastSNum){
+    	  self ! NextWindow(currentSNum)
+    	}else{
+    		self ! NextWindow(lastSNum - 20)
+    	}
     }
+    
   }
 }

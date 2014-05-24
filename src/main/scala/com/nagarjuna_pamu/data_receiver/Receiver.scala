@@ -31,7 +31,10 @@ class Receiver(receiverSideSender: ActorRef) extends Actor {
         println("got first msg containing: "+msg)
       }
       val diff = tuple._1 - startSNum
-      bitmap(diff) = 1
+      if(diff < Params.window)
+      if(diff <= Params.window){
+    	  bitmap(diff) = 1
+      }
       count = count + 1
       println(tuple._1+" received")
       for(i <- bitmap)
